@@ -51,7 +51,11 @@ Total unique stack(s): ${len(group.stacks)}
         return text
 %>
 ${"Stack %d:" % k}
-  ${count} call(s) from ${fr[2]} @${fr[0].split()[-1]}:${fr[1]}
+  % if fr is not None and len(fr) > 2:
+    ${count} call(s) from ${fr[2]} @${fr[0].split()[-1]}:${fr[1]}
+  % else:
+    ${count} call(s) - call stack is empty
+  % endif
   Traceback:
   ${reindent(trace)}
 % endfor ## end for k, trace in enumerate(group.stacks)

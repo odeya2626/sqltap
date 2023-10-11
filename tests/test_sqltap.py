@@ -19,7 +19,7 @@ from werkzeug.wrappers import Response
 import sqltap
 import sqltap.wsgi
 
-warnings.simplefilter(os.environ.get('WARNING_ACTION', 'error'))
+warnings.simplefilter(os.environ.get("WARNING_ACTION", "error"))
 
 REPORT_TITLE = "SQLTap Profiling Report"
 
@@ -34,9 +34,8 @@ class MockResults(object):
 
 
 class TestSQLTap(object):
-
     def setUp(self):
-        self.engine = create_engine('sqlite:///:memory:', echo=True)
+        self.engine = create_engine("sqlite:///:memory:", echo=True)
 
         Base = declarative_base(bind=self.engine)
 
@@ -45,6 +44,7 @@ class TestSQLTap(object):
             id = Column("id", Integer, primary_key=True)
             name = Column("name", String)
             description = Column("description", String)
+
         self.A = A
 
         Base.metadata.create_all(self.engine)
@@ -64,7 +64,7 @@ class TestSQLTap(object):
         assert expected == actual, message
 
     def test_insert(self):
-        """ Simple test that sqltap collects an insert query. """
+        """Simple test that sqltap collects an insert query."""
         profiler = sqltap.start(self.engine)
 
         sess = self.Session()
@@ -72,18 +72,18 @@ class TestSQLTap(object):
         sess.flush()
 
         stats = profiler.collect()
-        assert len(_startswith(stats, 'INSERT')) == 1
+        assert len(_startswith(stats, "INSERT")) == 1
         profiler.stop()
 
     def test_select(self):
-        """ Simple test that sqltap collects a select query. """
+        """Simple test that sqltap collects a select query."""
         profiler = sqltap.start(self.engine)
 
         sess = self.Session()
         sess.query(self.A).all()
 
         stats = profiler.collect()
-        assert len(_startswith(stats, 'SELECT')) == 1
+        assert len(_startswith(stats, "SELECT")) == 1
         profiler.stop()
 
     def test_engine_scoped(self):
@@ -91,7 +91,7 @@ class TestSQLTap(object):
         Test that calling sqltap.start with a particular engine instance
         properly captures queries only to that engine.
         """
-        engine2 = create_engine('sqlite:///:memory:', echo=True)
+        engine2 = create_engine("sqlite:///:memory:", echo=True)
 
         Base = declarative_base(bind=engine2)
 
@@ -109,7 +109,7 @@ class TestSQLTap(object):
         sess2 = Session()
         sess2.query(B).all()
 
-        stats = _startswith(profiler.collect(), 'SELECT')
+        stats = _startswith(profiler.collect(), "SELECT")
         assert len(stats) == 1
         profiler.stop()
 
@@ -118,7 +118,7 @@ class TestSQLTap(object):
         Test that registering globally for all queries correctly pulls queries
         from multiple engines.
         """
-        engine2 = create_engine('sqlite:///:memory:', echo=True)
+        engine2 = create_engine("sqlite:///:memory:", echo=True)
 
         Base = declarative_base(bind=engine2)
 
@@ -136,7 +136,7 @@ class TestSQLTap(object):
         sess2 = Session()
         sess2.query(B).all()
 
-        stats = _startswith(profiler.collect(), 'SELECT')
+        stats = _startswith(profiler.collect(), "SELECT")
         assert len(stats) == 2
         profiler.stop()
 
@@ -183,30 +183,31 @@ class TestSQLTap(object):
     def test_querygroup_add_params_no_dup(self):
         """Ensure that two identical parameter sets, belonging to different queries,
         are treated as separate."""
-        python_query = 'SELECT * FROM pythons WHERE name=:name'
-        directors_query = 'SELECT * FROM movies WHERE director=:name'
-        jones = {'name': 'Terry Jones'}
-        gilliam = {'name': 'Terry Gilliam'}
+        python_query = "SELECT * FROM pythons WHERE name=:name"
+        directors_query = "SELECT * FROM movies WHERE director=:name"
+        jones = {"name": "Terry Jones"}
+        gilliam = {"name": "Terry Gilliam"}
         query_groups = collections.defaultdict(sqltap.QueryGroup)
         all_group = sqltap.QueryGroup()
 
         def add(query, params, stack, rowcount, start=1, end=2):
-            stats = sqltap.QueryStats(query, stack, start, end, None,
-                                      params, MockResults(rowcount))
+            stats = sqltap.QueryStats(
+                query, stack, start, end, None, params, MockResults(rowcount)
+            )
             query_groups[stack].add(stats)
             all_group.add(stats)
             return stats
 
-        add(python_query, jones, 'stack1', 1)
-        add(directors_query, jones, 'stack2', 4)
-        add(python_query, gilliam, 'stack1', 1)
-        add(directors_query, gilliam, 'stack2', 12)
-        add(python_query, gilliam, 'stack1', 1)
-        add(directors_query, gilliam, 'stack9', 12)
+        add(python_query, jones, "stack1", 1)
+        add(directors_query, jones, "stack2", 4)
+        add(python_query, gilliam, "stack1", 1)
+        add(directors_query, gilliam, "stack2", 12)
+        add(python_query, gilliam, "stack1", 1)
+        add(directors_query, gilliam, "stack9", 12)
 
-        self.assertEqual(1 + 1 + 1, query_groups['stack1'].rowcounts)
-        self.assertEqual(4 + 12, query_groups['stack2'].rowcounts)
-        self.assertEqual(12, query_groups['stack9'].rowcounts)
+        self.assertEqual(1 + 1 + 1, query_groups["stack1"].rowcounts)
+        self.assertEqual(4 + 12, query_groups["stack2"].rowcounts)
+        self.assertEqual(12, query_groups["stack9"].rowcounts)
         self.assertEqual((1 + 1 + 1) + (4 + 12) + 12, all_group.rowcounts)
 
         self.assertEqual(3, len(all_group.stacks))
@@ -214,11 +215,11 @@ class TestSQLTap(object):
 
         self.assertEqual(4, len(all_group.params_hashes))
         gilliam_movie_queries = all_group.params_hashes[
-            (hash(directors_query),
-             sqltap.QueryStats.calculate_params_hash(gilliam))]
+            (hash(directors_query), sqltap.QueryStats.calculate_params_hash(gilliam))
+        ]
         jones_movie_queries = all_group.params_hashes[
-            (hash(directors_query),
-             sqltap.QueryStats.calculate_params_hash(jones))]
+            (hash(directors_query), sqltap.QueryStats.calculate_params_hash(jones))
+        ]
         self.assertEqual(1, jones_movie_queries[0])
         self.assertEqual(jones, jones_movie_queries[2])
         self.assertEqual(2, gilliam_movie_queries[0])
@@ -228,7 +229,7 @@ class TestSQLTap(object):
         """Regression test for when sql query params contain un-hashable python
         object e.g. Postgres ARRAY -> list.
         """
-        params = {'tags': ['programming', 'python', 'sqla']}
+        params = {"tags": ["programming", "python", "sqla"]}
 
         self.assertEqual(
             sqltap.QueryStats.calculate_params_hash(params),
@@ -256,7 +257,7 @@ class TestSQLTap(object):
         profiler = sqltap.start(self.engine)
 
         sess = self.Session()
-        q = sess.query(self.A).filter(self.A.name == u"معاذ")
+        q = sess.query(self.A).filter(self.A.name == "معاذ")
         q.all()
         stats = profiler.collect()
 
@@ -268,11 +269,11 @@ class TestSQLTap(object):
             self.assertEqual(report, fp.read())
 
     def test_report_raw_sql(self):
-        """ Ensure that reporting works when raw SQL queries were emitted. """
+        """Ensure that reporting works when raw SQL queries were emitted."""
         profiler = sqltap.start(self.engine)
 
         sess = self.Session()
-        sql = 'SELECT * FROM %s' % self.A.__tablename__
+        sql = "SELECT * FROM %s" % self.A.__tablename__
         sess.connection().execute(sql)
 
         stats = profiler.collect()
@@ -285,8 +286,8 @@ class TestSQLTap(object):
         profiler.stop()
 
     def test_report_ddl(self):
-        """ Ensure that reporting works when DDL were emitted """
-        engine2 = create_engine('sqlite:///:memory:', echo=True)
+        """Ensure that reporting works when DDL were emitted"""
+        engine2 = create_engine("sqlite:///:memory:", echo=True)
         Base2 = declarative_base(bind=engine2)
 
         class B(Base2):
@@ -311,16 +312,14 @@ class TestSQLTap(object):
         so when they receive the after_execute event, extra care must be taken.
         """
         profiler = sqltap.ProfilingSession(self.engine)
-        sqlalchemy.event.listen(self.engine, "after_execute",
-                                profiler._after_exec)
+        sqlalchemy.event.listen(self.engine, "after_execute", profiler._after_exec)
         sess = self.Session()
         q = sess.query(self.A)
         q.all()
         stats = profiler.collect()
         assert len(stats) == 1
         assert stats[0].duration == 0.0, str(stats[0].duration)
-        sqlalchemy.event.remove(self.engine, "after_execute",
-                                profiler._after_exec)
+        sqlalchemy.event.remove(self.engine, "after_execute", profiler._after_exec)
 
     def test_report_aggregation(self):
         """
@@ -342,8 +341,8 @@ class TestSQLTap(object):
 
         report = sqltap.report(profiler.collect())
         print(report)
-        assert '2 unique' in report
-        assert '<dd>10</dd>' in report
+        assert "2 unique" in report
+        assert "<dd>10</dd>" in report
         profiler.stop()
 
     def test_report_aggregation_w_different_param_sets(self):
@@ -354,8 +353,8 @@ class TestSQLTap(object):
 
         sess = self.Session()
 
-        a1 = self.A(name=uuid.uuid4().hex, description='')
-        a2 = self.A(name=uuid.uuid4().hex, description='')
+        a1 = self.A(name=uuid.uuid4().hex, description="")
+        a2 = self.A(name=uuid.uuid4().hex, description="")
         sess.add_all([a1, a2])
         sess.commit()
 
@@ -382,7 +381,7 @@ class TestSQLTap(object):
         q.all()
 
         stats = profiled.collect()
-        assert len(_startswith(stats, 'SELECT')) == 0
+        assert len(_startswith(stats, "SELECT")) == 0
 
         profiled.start()
         q.all()
@@ -391,10 +390,10 @@ class TestSQLTap(object):
         q.all()
 
         stats2 = profiled.collect()
-        assert len(_startswith(stats2, 'SELECT')) == 2
+        assert len(_startswith(stats2, "SELECT")) == 2
 
     def test_decorator(self):
-        """ Test that queries issued in a decorated function are profiled """
+        """Test that queries issued in a decorated function are profiled"""
         sess = self.Session()
         q = sess.query(self.A)
         profiled = sqltap.ProfilingSession(self.engine)
@@ -406,14 +405,14 @@ class TestSQLTap(object):
         q.all()
 
         stats = profiled.collect()
-        assert len(_startswith(stats, 'SELECT')) == 0
+        assert len(_startswith(stats, "SELECT")) == 0
 
         test_function()
         test_function()
         q.all()
 
         stats = profiled.collect()
-        assert len(_startswith(stats, 'SELECT')) == 2
+        assert len(_startswith(stats, "SELECT")) == 2
 
     def test_context_manager(self):
         sess = self.Session()
@@ -426,7 +425,7 @@ class TestSQLTap(object):
         q.all()
 
         stats = profiled.collect()
-        assert len(_startswith(stats, 'SELECT')) == 1
+        assert len(_startswith(stats, "SELECT")) == 1
 
     def test_context_fn(self):
         profiler = sqltap.start(self.engine, lambda *args: 1)
@@ -436,7 +435,7 @@ class TestSQLTap(object):
         q.all()
         stats = profiler.collect()
 
-        ctxs = [qstats.user_context for qstats in _startswith(stats, 'SELECT')]
+        ctxs = [qstats.user_context for qstats in _startswith(stats, "SELECT")]
         assert ctxs[0] == 1
         profiler.stop()
 
@@ -444,8 +443,8 @@ class TestSQLTap(object):
         x = {"i": 0}
 
         def context_fn(*args):
-            x['i'] += 1
-            return x['i']
+            x["i"] += 1
+            return x["i"]
 
         profiler = sqltap.start(self.engine, context_fn)
 
@@ -457,7 +456,7 @@ class TestSQLTap(object):
 
         stats = profiler.collect()
 
-        ctxs = [qstats.user_context for qstats in _startswith(stats, 'SELECT')]
+        ctxs = [qstats.user_context for qstats in _startswith(stats, "SELECT")]
         assert ctxs.count(1) == 1
         assert ctxs.count(2) == 1
         profiler.stop()
@@ -488,13 +487,14 @@ class TestSQLTap(object):
     def test_collect_fn_execption_on_collect(self):
         def noop():
             pass
+
         profiler = sqltap.start(self.engine, collect_fn=noop)
         profiler.collect()
         profiler.stop()
 
     def test_report_escaped(self):
-        """ Test that string escaped correctly. """
-        engine2 = create_engine('sqlite:///:memory:', echo=True)
+        """Test that string escaped correctly."""
+        engine2 = create_engine("sqlite:///:memory:", echo=True)
 
         Base = declarative_base(bind=engine2)
 
@@ -507,7 +507,7 @@ class TestSQLTap(object):
         profiler = sqltap.start(engine2)
 
         sess = Session()
-        sess.query(B).filter(B.id == u"<blockquote class='test'>").all()
+        sess.query(B).filter(B.id == "<blockquote class='test'>").all()
 
         report = sqltap.report(profiler.collect())
         assert "<blockquote class='test'>" not in report
@@ -520,10 +520,10 @@ class TestSQLTap(object):
 
 
 class TestSQLTapMiddleware(TestSQLTap):
-
     def setUp(self):
         super(TestSQLTapMiddleware, self).setUp()
         from werkzeug.testapp import test_app
+
         self.app = sqltap.wsgi.SQLTapMiddleware(app=test_app)
         self.client = Client(self.app, Response)
 
@@ -537,28 +537,28 @@ class TestSQLTapMiddleware(TestSQLTap):
         """Verify we can get the middleware path"""
         response = self.client.get(self.app.path)
         assert response.status_code == 200
-        assert 'text/html' in response.headers['content-type']
+        assert "text/html" in response.headers["content-type"]
 
     def test_wsgi_post_turn_on(self):
         """Verify we can POST turn=on to middleware"""
-        response = self.client.post(self.app.path, data='turn=on')
+        response = self.client.post(self.app.path, data="turn=on")
         assert response.status_code == 200
-        assert 'text/html' in response.headers['content-type']
+        assert "text/html" in response.headers["content-type"]
 
     def test_wsgi_post_turn_off(self):
         """Verify we can POST turn=off to middleware"""
-        response = self.client.post(self.app.path, data='turn=off')
+        response = self.client.post(self.app.path, data="turn=off")
         assert response.status_code == 200
-        assert 'text/html' in response.headers['content-type']
+        assert "text/html" in response.headers["content-type"]
 
     def test_wsgi_post_turn_400(self):
         """Verify we POSTing and invalid turn value returns a 400"""
-        response = self.client.post(self.app.path, data='turn=invalid_string')
+        response = self.client.post(self.app.path, data="turn=invalid_string")
         assert response.status_code == 400
-        assert 'text/plain' in response.headers['content-type']
+        assert "text/plain" in response.headers["content-type"]
 
     def test_wsgi_post_clear(self):
         """Verify we can POST clean=1 works"""
-        response = self.client.post(self.app.path, data='clear=1')
+        response = self.client.post(self.app.path, data="clear=1")
         assert response.status_code == 200
-        assert 'text/html' in response.headers['content-type']
+        assert "text/html" in response.headers["content-type"]

@@ -202,9 +202,14 @@ ${group.first_word}
                     <a class="toggle">
                       <h5>
                       <% fr = group.callers[trace] %>
+                      % if fr is not None and len(fr) > 2:
                       ${count}
                       ${'call' if count == 1 else 'calls'} from
                       <strong>${fr[2]}</strong> @${fr[0].split()[-1]}:${fr[1]}
+                      % else:
+                      ${count}
+                      ${'call' if count == 1 else 'calls'}
+                      % endif
                       </h5>
                     </a>
                     <pre class="trace hidden"><code class="python">${trace}</code></pre>
