@@ -21,6 +21,8 @@
         min-height: 600px;
         max-height: calc(100vh - 100px);
         overflow-y: scroll;
+        overflow: hidden;
+        height: 100vh;
       }
       #total-time { color: #fff; }
       #total-time .sum { color: #0f0; font-size: 16px; }
@@ -226,7 +228,7 @@ ${group.first_word}
     </div><!-- /.container -->
 
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.8.0/highlight.min.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
