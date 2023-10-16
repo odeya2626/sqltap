@@ -15,7 +15,7 @@ from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.sql import text
 from werkzeug.test import Client
-from werkzeug.testapp import app_test
+from werkzeug.testapp import test_app
 from werkzeug.wrappers import Response
 
 import sqltap
@@ -554,7 +554,7 @@ def test_context_return_self():
 
 @pytest.fixture
 def setup_client() -> tuple:
-    app = sqltap.wsgi.SQLTapMiddleware(app=app_test)
+    app = sqltap.wsgi.SQLTapMiddleware(app=test_app)
     client = Client(app, Response)
     return app, client
 
